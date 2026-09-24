@@ -38,10 +38,10 @@
         </header>
 
         <!-- KANBAN COLUMNAS -->
-        <main class="flex-1 p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 overflow-x-auto">
+        <main class="flex-1 p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             
             <!-- Columna 1 -->
-            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex flex-col h-[calc(100vh-140px)]">
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex flex-col h-[60vh]">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-700 mb-3">
                     <h2 class="font-bold text-red-400 text-sm flex items-center gap-1.5">🚨 Problema Sistema</h2>
                     <span id="count-problema" class="bg-red-500/20 text-red-300 text-xs px-2 py-0.5 rounded-full">0</span>
@@ -50,7 +50,7 @@
             </div>
 
             <!-- Columna 2 -->
-            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex flex-col h-[calc(100vh-140px)]">
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex flex-col h-[60vh]">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-700 mb-3">
                     <h2 class="font-bold text-amber-400 text-sm flex items-center gap-1.5">⚡ Mejora</h2>
                     <span id="count-mejora" class="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full">0</span>
@@ -59,7 +59,7 @@
             </div>
 
             <!-- Columna 3 -->
-            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex flex-col h-[calc(100vh-140px)]">
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex flex-col h-[60vh]">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-700 mb-3">
                     <h2 class="font-bold text-blue-400 text-sm flex items-center gap-1.5">🚀 Plataforma Nueva</h2>
                     <span id="count-implementacion" class="bg-blue-500/20 text-blue-300 text-xs px-2 py-0.5 rounded-full">0</span>
@@ -68,7 +68,7 @@
             </div>
 
             <!-- Columna 4 -->
-            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex flex-col h-[calc(100vh-140px)]">
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex flex-col h-[60vh]">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-700 mb-3">
                     <h2 class="font-bold text-purple-400 text-sm flex items-center gap-1.5">❓ Duda</h2>
                     <span id="count-duda" class="bg-purple-500/20 text-purple-300 text-xs px-2 py-0.5 rounded-full">0</span>
@@ -77,12 +77,28 @@
             </div>
 
         </main>
+
+        <!-- SECCIÓN DE PAPELERA / HISTORIAL DE RESUELTOS -->
+        <section class="px-6 pb-8">
+            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 shadow-xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-base text-slate-200 flex items-center gap-2">
+                        🗑️ Historial / Papelera de Mensajes Resueltos
+                        <span id="count-papelera" class="bg-slate-700 text-slate-300 text-xs px-2.5 py-0.5 rounded-full">0</span>
+                    </h3>
+                    <span class="text-xs text-slate-400">Aquí se guardan los resueltos. Puedes eliminarlos definitivamente de forma individual.</span>
+                </div>
+                <div id="col-papelera" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-64 overflow-y-auto pr-2">
+                    <!-- Los resueltos aparecerán aquí -->
+                </div>
+            </div>
+        </section>
     </div>
 
     <!-- Firebase conectado con tus credenciales reales -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, updateDoc, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCRmtC1M60U-YlxoIix5D6roKXs_houaFY",
@@ -120,38 +136,64 @@
                 document.getElementById('col-mejora').innerHTML = '';
                 document.getElementById('col-implementacion').innerHTML = '';
                 document.getElementById('col-duda').innerHTML = '';
+                document.getElementById('col-papelera').innerHTML = '';
 
-                let counts = { problema: 0, mejora: 0, implementacion: 0, duda: 0 };
+                let counts = { problema: 0, mejora: 0, implementacion: 0, duda: 0, papelera: 0 };
 
                 snapshot.forEach((documento) => {
                     const msg = documento.data();
                     const idDoc = documento.id;
+                    const resuelto = msg.resuelto === true;
 
                     const tarjeta = document.createElement('div');
-                    tarjeta.className = 'bg-slate-700/50 border border-slate-600 p-3.5 rounded-xl shadow hover:bg-slate-700 transition relative group';
-                    tarjeta.innerHTML = `
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="font-semibold text-xs text-slate-200">${escapeHtml(msg.autor)}</span>
-                            <span class="text-[10px] text-slate-400">${msg.fecha}</span>
-                        </div>
-                        <p class="text-sm text-slate-300 whitespace-pre-wrap mb-3">${escapeHtml(msg.descripcion)}</p>
-                        <button onclick="resolverMensaje('${idDoc}')" class="text-[11px] text-red-400 hover:text-red-300 font-medium bg-red-950/40 px-2 py-1 rounded transition w-full text-center">
-                            Marcar como Resuelto / Eliminar
-                        </button>
-                    `;
-
-                    if (msg.tipo.includes('Problema')) {
-                        document.getElementById('col-problema').appendChild(tarjeta);
-                        counts.problema++;
-                    } else if (msg.tipo.includes('Mejora')) {
-                        document.getElementById('col-mejora').appendChild(tarjeta);
-                        counts.mejora++;
-                    } else if (msg.tipo.includes('Implementacion')) {
-                        document.getElementById('col-implementacion').appendChild(tarjeta);
-                        counts.implementacion++;
+                    
+                    if (resuelto) {
+                        // Estilo para la papelera / historial
+                        tarjeta.className = 'bg-slate-900/60 border border-slate-700 p-3.5 rounded-xl shadow opacity-75 hover:opacity-100 transition';
+                        tarjeta.innerHTML = `
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="font-semibold text-xs text-slate-400 line-through">${escapeHtml(msg.autor)}</span>
+                                <span class="text-[10px] bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded border border-emerald-800">Resuelto</span>
+                            </div>
+                            <p class="text-xs text-slate-400 whitespace-pre-wrap mb-3 line-through">${escapeHtml(msg.descripcion)}</p>
+                            <div class="flex gap-2">
+                                <button onclick="desmarcarResuelto('${idDoc}')" class="flex-1 text-[11px] text-amber-400 hover:text-amber-300 font-medium bg-amber-950/40 px-2 py-1 rounded transition text-center">
+                                    ↩ Restaurar
+                                </button>
+                                <button onclick="eliminarDefinitivo('${idDoc}')" class="flex-1 text-[11px] text-red-400 hover:text-red-300 font-medium bg-red-950/40 px-2 py-1 rounded transition text-center">
+                                    🗑️ Borrar
+                                </button>
+                            </div>
+                        `;
+                        document.getElementById('col-papelera').appendChild(tarjeta);
+                        counts.papelera++;
                     } else {
-                        document.getElementById('col-duda').appendChild(tarjeta);
-                        counts.duda++;
+                        // Estilo para las columnas activas de Kanban
+                        tarjeta.className = 'bg-slate-700/50 border border-slate-600 p-3.5 rounded-xl shadow hover:bg-slate-700 transition';
+                        tarjeta.innerHTML = `
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="font-semibold text-xs text-slate-200">${escapeHtml(msg.autor)}</span>
+                                <span class="text-[10px] text-slate-400">${msg.fecha}</span>
+                            </div>
+                            <p class="text-sm text-slate-300 whitespace-pre-wrap mb-3">${escapeHtml(msg.descripcion)}</p>
+                            <button onclick="marcarResuelto('${idDoc}')" class="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium bg-emerald-950/40 px-2 py-1 rounded transition w-full text-center">
+                                ✓ Marcar como Resuelto
+                            </button>
+                        `;
+
+                        if (msg.tipo.includes('Problema')) {
+                            document.getElementById('col-problema').appendChild(tarjeta);
+                            counts.problema++;
+                        } else if (msg.tipo.includes('Mejora')) {
+                            document.getElementById('col-mejora').appendChild(tarjeta);
+                            counts.mejora++;
+                        } else if (msg.tipo.includes('Implementacion')) {
+                            document.getElementById('col-implementacion').appendChild(tarjeta);
+                            counts.implementacion++;
+                        } else {
+                            document.getElementById('col-duda').appendChild(tarjeta);
+                            counts.duda++;
+                        }
                     }
                 });
 
@@ -159,14 +201,34 @@
                 document.getElementById('count-mejora').innerText = counts.mejora;
                 document.getElementById('count-implementacion').innerText = counts.implementacion;
                 document.getElementById('count-duda').innerText = counts.duda;
+                document.getElementById('count-papelera').innerText = counts.papelera;
             });
         }
 
-        window.resolverMensaje = async function(idDoc) {
+        // Funciones globales vinculadas a los botones
+        window.marcarResuelto = async function(idDoc) {
             try {
-                await deleteDoc(doc(db, "mensajes", idDoc));
+                await updateDoc(doc(db, "mensajes", idDoc), { resuelto: true });
             } catch (error) {
-                console.error("Error al eliminar: ", error);
+                console.error("Error al marcar como resuelto: ", error);
+            }
+        }
+
+        window.desmarcarResuelto = async function(idDoc) {
+            try {
+                await updateDoc(doc(db, "mensajes", idDoc), { resuelto: false });
+            } catch (error) {
+                console.error("Error al restaurar: ", error);
+            }
+        }
+
+        window.eliminarDefinitivo = async function(idDoc) {
+            if (confirm("¿Estás seguro de eliminar este mensaje definitivamente de la papelera?")) {
+                try {
+                    await deleteDoc(doc(db, "mensajes", idDoc));
+                } catch (error) {
+                    console.error("Error al eliminar: ", error);
+                }
             }
         }
 
@@ -175,6 +237,7 @@
         }
     </script>
 </body>
+</html>
 </html>
     </script>
 </body>
