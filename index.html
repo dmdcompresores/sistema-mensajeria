@@ -45,43 +45,53 @@
         </div>
     </div>
 
-    <!-- Firebase SDK (Almacenamiento y Sincronización Temporal de Prueba) -->
+    <!-- Firebase conectado con tus credenciales reales -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // NOTA: Para producción puedes reemplazar esto con tu proyecto gratuito de Firebase
         const firebaseConfig = {
-            apiKey: "AIzaSyDummyKeyForDemoPurposesOnly12345",
-            authDomain: "demo-sistema.firebaseapp.com",
-            projectId: "demo-sistema"
+            apiKey: "AIzaSyCRmtC1M60U-YlxoIix5D6roKXs_houaFY",
+            authDomain: "sis-mensajeria.firebaseapp.com",
+            databaseURL: "https://sis-mensajeria-default-rtdb.firebaseio.com",
+            projectId: "sis-mensajeria",
+            storageBucket: "sis-mensajeria.firebasestorage.app",
+            messagingSenderId: "616024640068",
+            appId: "1:616024640068:web:1b0b95c61c83135760ca11",
+            measurementId: "G-ED1G77DTQ6"
         };
 
-        // Si prefieres almacenamiento local rápido sin Firebase para probar en la misma red local o navegador:
-        // Usaremos localStorage simulado en tiempo real con eventos para demostración inmediata, 
-        // o puedes configurar tu Firebase. Aquí usamos almacenamiento seguro del navegador sincronizado:
-        
-        document.getElementById('mensajeForm').addEventListener('submit', (e) => {
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        document.getElementById('mensajeForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const nuevoMensaje = {
-                id: Date.now(),
-                autor: document.getElementById('autor').value,
-                tipo: document.getElementById('tipo').value,
-                descripcion: document.getElementById('descripcion').value,
-                fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            };
+            
+            const btn = document.getElementById('btnEnviar');
+            btn.disabled = true;
+            btn.innerText = "Enviando...";
 
-            // Guardar en almacenamiento global compartido simulado o localStorage
-            let mensajes = JSON.parse(localStorage.getItem('mensajes_soporte') || '[]');
-            mensajes.push(nuevoMensaje);
-            localStorage.setItem('mensajes_soporte', JSON.stringify(mensajes));
+            try {
+                await addDoc(collection(db, "mensajes"), {
+                    autor: document.getElementById('autor').value,
+                    tipo: document.getElementById('tipo').value,
+                    descripcion: document.getElementById('descripcion').value,
+                    fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    timestamp: Date.now()
+                });
 
-            // Mostrar alerta y limpiar
-            document.getElementById('mensajeAlerta').classList.remove('hidden');
-            document.getElementById('mensajeForm').reset();
-            setTimeout(() => {
-                document.getElementById('mensajeAlerta').classList.add('hidden');
-            }, 3000);
+                document.getElementById('mensajeAlerta').classList.remove('hidden');
+                document.getElementById('mensajeForm').reset();
+                setTimeout(() => {
+                    document.getElementById('mensajeAlerta').classList.add('hidden');
+                }, 3000);
+            } catch (error) {
+                alert("Hubo un error al enviar el mensaje.");
+                console.error(error);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Enviar Mensaje";
+            }
         });
     </script>
 </body>
