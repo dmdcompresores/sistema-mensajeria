@@ -32,7 +32,7 @@
         <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex justify-between items-center shadow-md">
             <h1 class="text-xl font-bold flex items-center gap-2">📊 Tablero de Control y Recepción</h1>
             <div class="flex items-center gap-4">
-                <span class="text-xs bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/30 font-medium">Sistema en Línea</span>
+                <span class="text-xs bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/30 font-medium">Conectado en Vivo</span>
                 <a href="index.html" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg transition">Ir a Enviar Mensaje</a>
             </div>
         </header>
@@ -79,7 +79,25 @@
         </main>
     </div>
 
-    <script>
+    <!-- Firebase conectado con tus credenciales reales -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCRmtC1M60U-YlxoIix5D6roKXs_houaFY",
+            authDomain: "sis-mensajeria.firebaseapp.com",
+            databaseURL: "https://sis-mensajeria-default-rtdb.firebaseio.com",
+            projectId: "sis-mensajeria",
+            storageBucket: "sis-mensajeria.firebasestorage.app",
+            messagingSenderId: "616024640068",
+            appId: "1:616024640068:web:1b0b95c61c83135760ca11",
+            measurementId: "G-ED1G77DTQ6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
         // Lógica de contraseña
         document.getElementById('formPassword').addEventListener('submit', (e) => {
             e.preventDefault();
@@ -87,79 +105,77 @@
             if (pin === '2222') {
                 document.getElementById('modalPassword').classList.add('hidden');
                 document.getElementById('panelPrincipal').classList.remove('hidden');
-                cargarMensajes();
+                escucharMensajesEnTiempoReal();
             } else {
                 document.getElementById('errorPin').classList.remove('hidden');
                 document.getElementById('inputPin').value = '';
             }
         });
 
-        // Cargar y organizar mensajes en columnas
-        function cargarMensajes() {
-            const mensajes = JSON.parse(localStorage.getItem('mensajes_soporte') || '[]');
+        function escucharMensajesEnTiempoReal() {
+            const q = query(collection(db, "mensajes"), orderBy("timestamp", "desc"));
             
-            // Vaciar contenedores
-            document.getElementById('col-problema').innerHTML = '';
-            document.getElementById('col-mejora').innerHTML = '';
-            document.getElementById('col-implementacion').innerHTML = '';
-            document.getElementById('col-duda').innerHTML = '';
+            onSnapshot(q, (snapshot) => {
+                document.getElementById('col-problema').innerHTML = '';
+                document.getElementById('col-mejora').innerHTML = '';
+                document.getElementById('col-implementacion').innerHTML = '';
+                document.getElementById('col-duda').innerHTML = '';
 
-            let counts = { problema: 0, mejora: 0, implementacion: 0, duda: 0 };
+                let counts = { problema: 0, mejora: 0, implementacion: 0, duda: 0 };
 
-            mensajes.forEach((msg, index) => {
-                const tarjeta = document.createElement('div');
-                tarjeta.className = 'bg-slate-700/50 border border-slate-600 p-3.5 rounded-xl shadow hover:bg-slate-700 transition relative group';
-                tarjeta.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="font-semibold text-xs text-slate-200">${escapeHtml(msg.autor)}</span>
-                        <span class="text-[10px] text-slate-400">${msg.fecha}</span>
-                    </div>
-                    <p class="text-sm text-slate-300 whitespace-pre-wrap mb-3">${escapeHtml(msg.descripcion)}</p>
-                    <button onclick="eliminarMensaje(${index})" class="text-[11px] text-red-400 hover:text-red-300 font-medium bg-red-950/40 px-2 py-1 rounded transition w-full text-center">
-                        Marcar como Resuelto / Eliminar
-                    </button>
-                `;
+                snapshot.forEach((documento) => {
+                    const msg = documento.data();
+                    const idDoc = documento.id;
 
-                // Clasificar según tipo
-                if (msg.tipo.includes('Problema')) {
-                    document.getElementById('col-problema').appendChild(tarjeta);
-                    counts.problema++;
-                } else if (msg.tipo.includes('Mejora')) {
-                    document.getElementById('col-mejora').appendChild(tarjeta);
-                    counts.mejora++;
-                } else if (msg.tipo.includes('Implementacion')) {
-                    document.getElementById('col-implementacion').appendChild(tarjeta);
-                    counts.implementacion++;
-                } else {
-                    document.getElementById('col-duda').appendChild(tarjeta);
-                    counts.duda++;
-                }
+                    const tarjeta = document.createElement('div');
+                    tarjeta.className = 'bg-slate-700/50 border border-slate-600 p-3.5 rounded-xl shadow hover:bg-slate-700 transition relative group';
+                    tarjeta.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="font-semibold text-xs text-slate-200">${escapeHtml(msg.autor)}</span>
+                            <span class="text-[10px] text-slate-400">${msg.fecha}</span>
+                        </div>
+                        <p class="text-sm text-slate-300 whitespace-pre-wrap mb-3">${escapeHtml(msg.descripcion)}</p>
+                        <button onclick="resolverMensaje('${idDoc}')" class="text-[11px] text-red-400 hover:text-red-300 font-medium bg-red-950/40 px-2 py-1 rounded transition w-full text-center">
+                            Marcar como Resuelto / Eliminar
+                        </button>
+                    `;
+
+                    if (msg.tipo.includes('Problema')) {
+                        document.getElementById('col-problema').appendChild(tarjeta);
+                        counts.problema++;
+                    } else if (msg.tipo.includes('Mejora')) {
+                        document.getElementById('col-mejora').appendChild(tarjeta);
+                        counts.mejora++;
+                    } else if (msg.tipo.includes('Implementacion')) {
+                        document.getElementById('col-implementacion').appendChild(tarjeta);
+                        counts.implementacion++;
+                    } else {
+                        document.getElementById('col-duda').appendChild(tarjeta);
+                        counts.duda++;
+                    }
+                });
+
+                document.getElementById('count-problema').innerText = counts.problema;
+                document.getElementById('count-mejora').innerText = counts.mejora;
+                document.getElementById('count-implementacion').innerText = counts.implementacion;
+                document.getElementById('count-duda').innerText = counts.duda;
             });
-
-            // Actualizar contadores
-            document.getElementById('count-problema').innerText = counts.problema;
-            document.getElementById('count-mejora').innerText = counts.mejora;
-            document.getElementById('count-implementacion').innerText = counts.implementacion;
-            document.getElementById('count-duda').innerText = counts.duda;
         }
 
-        window.eliminarMensaje = function(index) {
-            let mensajes = JSON.parse(localStorage.getItem('mensajes_soporte') || '[]');
-            mensajes.splice(index, 1);
-            localStorage.setItem('mensajes_soporte', JSON.stringify(mensajes));
-            cargarMensajes();
+        window.resolverMensaje = async function(idDoc) {
+            try {
+                await deleteDoc(doc(db, "mensajes", idDoc));
+            } catch (error) {
+                console.error("Error al eliminar: ", error);
+            }
         }
 
         function escapeHtml(text) {
             return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
-
-        // Actualización automática cada 2 segundos para simular tiempo real
-        setInterval(() => {
-            if (!document.getElementById('panelPrincipal').classList.contains('hidden')) {
-                cargarMensajes();
-            }
-        }, 2000);
+    </script>
+</body>
+</html>
     </script>
 </body>
 </html>
