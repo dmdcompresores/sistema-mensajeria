@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero Receptor - Soporte</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 min-h-screen text-slate-100">
+
+    <!-- PANTALLA DE BLOQUEO DE CONTRASEÑA -->
+    <div id="modalPassword" class="fixed inset-0 bg-slate-950 flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-sm border border-slate-700 text-center">
+            <h2 class="text-xl font-bold mb-2">Acceso Restringido</h2>
+            <p class="text-slate-400 text-sm mb-6">Ingresa la contraseña numérica de receptor</p>
+            
+            <form id="formPassword" class="space-y-4">
+                <input type="password" id="inputPin" maxlength="4" autofocus class="w-full text-center text-2xl tracking-widest px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-white" placeholder="••••">
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition">
+                    Ingresar
+                </button>
+            </form>
+            <p id="errorPin" class="text-red-400 text-xs mt-3 hidden">Contraseña incorrecta (Prueba 2222)</p>
+            <div class="mt-6">
+                <a href="index.html" class="text-xs text-slate-400 hover:text-white">← Volver al formulario de envío</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANEL PRINCIPAL (OCULTO HASTA PONER CONTRASEÑA) -->
+    <div id="panelPrincipal" class="hidden min-h-screen flex flex-col">
+        <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex justify-between items-center shadow-md">
+            <h1 class="text-xl font-bold flex items-center gap-2">📊 Tablero de Control y Recepción</h1>
+            <div class="flex items-center gap-4">
+                <span class="text-xs bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/30 font-medium">Sistema en Línea</span>
+                <a href="index.html" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg transition">Ir a Enviar Mensaje</a>
+            </div>
+        </header>
+
+        <!-- KANBAN COLUMNAS -->
+        <main class="flex-1 p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 overflow-x-auto">
+            
+            <!-- Columna 1 -->
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex flex-col h-[calc(100vh-140px)]">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-700 mb-3">
+                    <h2 class="font-bold text-red-400 text-sm flex items-center gap-1.5">🚨 Problema Sistema</h2>
+                    <span id="count-problema" class="bg-red-500/20 text-red-300 text-xs px-2 py-0.5 rounded-full">0</span>
+                </div>
+                <div id="col-problema" class="flex-1 overflow-y-auto space-y-3 pr-1"></div>
+            </div>
+
+            <!-- Columna 2 -->
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex flex-col h-[calc(100vh-140px)]">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-700 mb-3">
+                    <h2 class="font-bold text-amber-400 text-sm flex items-center gap-1.5">⚡ Mejora</h2>
+                    <span id="count-mejora" class="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full">0</span>
+                </div>
+                <div id="col-mejora" class="flex-1 overflow-y-auto space-y-3 pr-1"></div>
+            </div>
+
+            <!-- Columna 3 -->
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex flex-col h-[calc(100vh-140px)]">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-700 mb-3">
+                    <h2 class="font-bold text-blue-400 text-sm flex items-center gap-1.5">🚀 Plataforma Nueva</h2>
+                    <span id="count-implementacion" class="bg-blue-500/20 text-blue-300 text-xs px-2 py-0.5 rounded-full">0</span>
+                </div>
+                <div id="col-implementacion" class="flex-1 overflow-y-auto space-y-3 pr-1"></div>
+            </div>
+
+            <!-- Columna 4 -->
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex flex-col h-[calc(100vh-140px)]">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-700 mb-3">
+                    <h2 class="font-bold text-purple-400 text-sm flex items-center gap-1.5">❓ Duda</h2>
+                    <span id="count-duda" class="bg-purple-500/20 text-purple-300 text-xs px-2 py-0.5 rounded-full">0</span>
+                </div>
+                <div id="col-duda" class="flex-1 overflow-y-auto space-y-3 pr-1"></div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // Lógica de contraseña
+        document.getElementById('formPassword').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const pin = document.getElementById('inputPin').value;
+            if (pin === '2222') {
+                document.getElementById('modalPassword').classList.add('hidden');
+                document.getElementById('panelPrincipal').classList.remove('hidden');
+                cargarMensajes();
+            } else {
+                document.getElementById('errorPin').classList.remove('hidden');
+                document.getElementById('inputPin').value = '';
+            }
+        });
+
+        // Cargar y organizar mensajes en columnas
+        function cargarMensajes() {
+            const mensajes = JSON.parse(localStorage.getItem('mensajes_soporte') || '[]');
+            
+            // Vaciar contenedores
+            document.getElementById('col-problema').innerHTML = '';
+            document.getElementById('col-mejora').innerHTML = '';
+            document.getElementById('col-implementacion').innerHTML = '';
+            document.getElementById('col-duda').innerHTML = '';
+
+            let counts = { problema: 0, mejora: 0, implementacion: 0, duda: 0 };
+
+            mensajes.forEach((msg, index) => {
+                const tarjeta = document.createElement('div');
+                tarjeta.className = 'bg-slate-700/50 border border-slate-600 p-3.5 rounded-xl shadow hover:bg-slate-700 transition relative group';
+                tarjeta.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="font-semibold text-xs text-slate-200">${escapeHtml(msg.autor)}</span>
+                        <span class="text-[10px] text-slate-400">${msg.fecha}</span>
+                    </div>
+                    <p class="text-sm text-slate-300 whitespace-pre-wrap mb-3">${escapeHtml(msg.descripcion)}</p>
+                    <button onclick="eliminarMensaje(${index})" class="text-[11px] text-red-400 hover:text-red-300 font-medium bg-red-950/40 px-2 py-1 rounded transition w-full text-center">
+                        Marcar como Resuelto / Eliminar
+                    </button>
+                `;
+
+                // Clasificar según tipo
+                if (msg.tipo.includes('Problema')) {
+                    document.getElementById('col-problema').appendChild(tarjeta);
+                    counts.problema++;
+                } else if (msg.tipo.includes('Mejora')) {
+                    document.getElementById('col-mejora').appendChild(tarjeta);
+                    counts.mejora++;
+                } else if (msg.tipo.includes('Implementacion')) {
+                    document.getElementById('col-implementacion').appendChild(tarjeta);
+                    counts.implementacion++;
+                } else {
+                    document.getElementById('col-duda').appendChild(tarjeta);
+                    counts.duda++;
+                }
+            });
+
+            // Actualizar contadores
+            document.getElementById('count-problema').innerText = counts.problema;
+            document.getElementById('count-mejora').innerText = counts.mejora;
+            document.getElementById('count-implementacion').innerText = counts.implementacion;
+            document.getElementById('count-duda').innerText = counts.duda;
+        }
+
+        window.eliminarMensaje = function(index) {
+            let mensajes = JSON.parse(localStorage.getItem('mensajes_soporte') || '[]');
+            mensajes.splice(index, 1);
+            localStorage.setItem('mensajes_soporte', JSON.stringify(mensajes));
+            cargarMensajes();
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // Actualización automática cada 2 segundos para simular tiempo real
+        setInterval(() => {
+            if (!document.getElementById('panelPrincipal').classList.contains('hidden')) {
+                cargarMensajes();
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

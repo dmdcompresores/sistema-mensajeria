@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enviar Mensaje - Soporte</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-slate-800">Enviar Reporte</h1>
+            <a href="receptor.html" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-3 py-1.5 rounded-lg transition">Ver Tablero ➔</a>
+        </div>
+
+        <form id="mensajeForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Tu Nombre / Área</label>
+                <input type="text" id="autor" required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ej: Juan Pérez / Caja">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Tipo de Mensaje</label>
+                <select id="tipo" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    <option value="Problema de sistema/plataforma">Problema de sistema/plataforma</option>
+                    <option value="Mejora">Mejora</option>
+                    <option value="Implementacion de plataforma nueva">Implementación de plataforma nueva</option>
+                    <option value="Duda">Duda</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Descripción del Mensaje</label>
+                <textarea id="descripcion" rows="4" required class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Describe detalladamente la situación..."></textarea>
+            </div>
+
+            <button type="submit" id="btnEnviar" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-blue-500/30">
+                Enviar Mensaje
+            </button>
+        </form>
+
+        <div id="mensajeAlerta" class="hidden mt-4 p-3 bg-green-100 text-green-700 rounded-xl text-center text-sm font-medium">
+            ¡Mensaje enviado correctamente!
+        </div>
+    </div>
+
+    <!-- Firebase SDK (Almacenamiento y Sincronización Temporal de Prueba) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // NOTA: Para producción puedes reemplazar esto con tu proyecto gratuito de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDummyKeyForDemoPurposesOnly12345",
+            authDomain: "demo-sistema.firebaseapp.com",
+            projectId: "demo-sistema"
+        };
+
+        // Si prefieres almacenamiento local rápido sin Firebase para probar en la misma red local o navegador:
+        // Usaremos localStorage simulado en tiempo real con eventos para demostración inmediata, 
+        // o puedes configurar tu Firebase. Aquí usamos almacenamiento seguro del navegador sincronizado:
+        
+        document.getElementById('mensajeForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const nuevoMensaje = {
+                id: Date.now(),
+                autor: document.getElementById('autor').value,
+                tipo: document.getElementById('tipo').value,
+                descripcion: document.getElementById('descripcion').value,
+                fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+
+            // Guardar en almacenamiento global compartido simulado o localStorage
+            let mensajes = JSON.parse(localStorage.getItem('mensajes_soporte') || '[]');
+            mensajes.push(nuevoMensaje);
+            localStorage.setItem('mensajes_soporte', JSON.stringify(mensajes));
+
+            // Mostrar alerta y limpiar
+            document.getElementById('mensajeAlerta').classList.remove('hidden');
+            document.getElementById('mensajeForm').reset();
+            setTimeout(() => {
+                document.getElementById('mensajeAlerta').classList.add('hidden');
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
